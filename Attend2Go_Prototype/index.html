@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#12304a">
+<meta name="description" content="Attend2Go offline-first school attendance prototype">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Attend2Go | School Attendance</title>
+<style>
+:root{--navy:#12304a;--blue:#1769aa;--cyan:#dff3f7;--bg:#f4f7fa;--ink:#1d2a36;--muted:#687887;--line:#e2e9ef;--green:#16794b;--red:#b43b43;--amber:#9a6400;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:var(--navy);color:white;padding:14px max(16px,calc((100% - 1120px)/2));display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:5}
+.brand{font-size:20px;font-weight:800;letter-spacing:.2px}.brand small{display:block;font-size:10px;font-weight:500;opacity:.75;letter-spacing:1.4px}
+.net{font-size:12px;border:1px solid #ffffff55;border-radius:30px;padding:6px 10px;white-space:nowrap}
+main{max-width:1120px;margin:22px auto;padding:0 16px 40px}
+.topline{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-size:25px;margin:0 0 3px}h2{font-size:17px;margin:0 0 12px}.sub{color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:8px;margin:18px 0}.tab,button,select,input{font:inherit}
+.tab{border:1px solid var(--line);background:white;color:var(--navy);padding:9px 14px;border-radius:10px;font-weight:650;cursor:pointer}
+.tab.active{background:var(--navy);color:white;border-color:var(--navy)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.card,.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:15px;box-shadow:0 2px 8px #17344b08}
+.metric{font-size:26px;font-weight:800;color:var(--navy);margin-top:3px}.metric-label{font-size:12px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,.9fr);gap:14px}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+input[type=search],select,input[type=date]{border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:white;color:var(--ink)}
+input[type=search]{flex:1;min-width:140px}
+button{border:0;border-radius:9px;padding:9px 12px;cursor:pointer;font-weight:650}
+.primary{background:var(--blue);color:white}.secondary{background:#edf3f7;color:var(--navy)}.danger{background:#fff0f0;color:var(--red)}
+.student-list{display:grid;gap:7px}
+.student{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;border:1px solid var(--line);border-radius:11px;padding:8px 10px;background:white}
+.avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--cyan);color:var(--navy);font-weight:800;font-size:12px}
+.name{font-weight:650;font-size:14px}.roll{font-size:11px;color:var(--muted)}
+.status{display:flex;gap:5px}.status button{padding:7px 9px;font-size:12px;border:1px solid var(--line);background:#fff;color:var(--muted)}
+.status button.selected.present{background:#e8f6ef;color:var(--green);border-color:#b9e4cd}
+.status button.selected.absent{background:#fff0f0;color:var(--red);border-color:#f1c6c6}
+.notice{padding:11px 12px;border-radius:10px;background:#fff8e7;color:#775000;font-size:13px;margin:10px 0}
+.alert{border:1px solid #f1d7a4;background:#fffaf0;border-radius:11px;padding:11px;margin:8px 0}
+.alert strong{display:block;color:#795000;font-size:13px}.alert span{font-size:12px;color:#6f6045}
+.pill{font-size:11px;border-radius:20px;padding:4px 8px;background:#edf3f7;color:var(--navy);font-weight:700}
+.hidden{display:none!important}.muted{color:var(--muted)}.footer-note{font-size:11px;color:var(--muted);margin-top:12px}
+.office-table{width:100%;border-collapse:collapse;font-size:13px}.office-table td,.office-table th{text-align:left;padding:9px 6px;border-bottom:1px solid var(--line)}.office-table th{color:var(--muted);font-size:11px;text-transform:uppercase}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#172b3c;color:white;padding:11px 16px;border-radius:10px;box-shadow:0 8px 30px #0003;z-index:10;font-size:13px}
+@media(max-width:760px){.cards{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}main{margin-top:15px}.student{grid-template-columns:30px 1fr auto}.status button{padding:7px 8px}}
+@media(max-width:390px){.student{gap:6px;padding:7px}.status button{font-size:11px;padding:7px 6px}.name{font-size:13px}}
+</style>
+</head>
+<body>
+<header><div class="brand">Attend2Go<small>SCHOOL ATTENDANCE, SIMPLIFIED</small></div><div class="net" id="netStatus">● Checking connection</div></header>
+<main>
+  <div class="topline">
+    <div><h1 id="pageTitle">Class 6A attendance</h1><div class="sub">Greenfield Demo School · Teacher: Ms. Sharma · <span id="todayLabel"></span></div></div>
+    <div class="actions"><select id="classSelect" aria-label="Select class"><option>Class 6A</option><option>Class 6B</option><option>Class 7A</option></select><input type="date" id="dateSelect" aria-label="Attendance date"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="teacherTab">Teacher view</button>
+    <button class="tab" id="officeTab">Office dashboard</button>
+  </div>
+  <section id="teacherView">
+    <div class="cards">
+      <div class="card"><div class="metric" id="presentMetric">38</div><div class="metric-label">Present</div></div>
+      <div class="card"><div class="metric" id="absentMetric">2</div><div class="metric-label">Absent</div></div>
+      <div class="card"><div class="metric" id="unmarkedMetric">0</div><div class="metric-label">Not marked</div></div>
+      <div class="card"><div class="metric" id="syncMetric">2</div><div class="metric-label">Pending sync</div></div>
+    </div>
+    <div class="layout">
+      <div class="panel">
+        <div class="toolbar">
+          <input type="search" id="searchStudent" placeholder="Find student…" aria-label="Find student">
+          <button class="secondary" id="allPresent">Mark all present</button>
+        </div>
+        <div class="student-list" id="studentList"></div>
+        <div class="toolbar" style="margin-top:14px">
+          <button class="primary" id="saveBtn">Save attendance</button>
+          <button class="secondary" id="syncBtn">Sync now</button>
+          <span class="pill" id="saveState">Saved on this phone</span>
+        </div>
+        <div class="footer-note">Prototype uses fictional student records. Changes are stored on this device until synchronised.</div>
+      </div>
+      <aside class="panel">
+        <h2>Follow-up alerts</h2>
+        <div class="sub">Students absent for 3 consecutive school days</div>
+        <div id="teacherAlerts"></div>
+        <div class="notice">A school day is counted Monday–Friday. Holidays should be configured in a real deployment.</div>
+        <button class="secondary" id="demoAlert">Show demo alert scenario</button>
+      </aside>
+    </div>
+  </section>
+  <section id="officeView" class="hidden">
+    <div class="cards">
+      <div class="card"><div class="metric" id="officeTotal">40</div><div class="metric-label">Enrolled students</div></div>
+      <div class="card"><div class="metric" id="officePresent">38</div><div class="metric-label">Present today</div></div>
+      <div class="card"><div class="metric" id="officeAbsent">2</div><div class="metric-label">Absent today</div></div>
+      <div class="card"><div class="metric" id="officeRate">95%</div><div class="metric-label">Attendance rate</div></div>
+    </div>
+    <div class="layout">
+      <div class="panel">
+        <div class="toolbar"><h2 style="margin:0;flex:1">Today's absentees</h2><button class="secondary" id="exportBtn">Export CSV</button></div>
+        <table class="office-table"><thead><tr><th>Roll</th><th>Student</th><th>Status</th></tr></thead><tbody id="absentTable"></tbody></table>
+        <p class="footer-note">Office view updates from locally saved demo data. A real deployment would receive synced records from the school server.</p>
+      </div>
+      <div class="panel"><h2>Needs attention</h2><div class="sub">Three-day consecutive absence alerts</div><div id="officeAlerts"></div></div>
+    </div>
+  </section>
+</main>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+<script>
+const names=["Aarav Shah","Aanya Verma","Aditya Singh","Anaya Gupta","Arjun Mishra","Diya Patel","Ishaan Khan","Ira Joshi","Kabir Rao","Kiara Das","Krish Malhotra","Meera Das","Neha Yadav","Reyansh Kumar","Riya Kapoor","Rohan Sinha","Saanvi Jain","Samarth Roy","Sara Ali","Shaurya Bose","Tara Mehta","Vihaan Nair","Zara Sheikh","Devansh Gupta","Myra Sen","Ansh Tiwari","Avni Bhat","Rudra Das","Pari Saxena","Yash Arora","Navya Iyer","Dhruv Khanna","Anika Paul","Vivaan Dutta","Ishita Roy","Kunal Ghosh","Mahi Agarwal","Pranav Joshi","Aditi Rao","Manav Sen"];
+const students=names.map((name,i)=>({id:i+1,roll:String(i+1).padStart(2,"0"),name}));
+const KEY="attend2go-demo-v1";
+const today=new Date(); today.setHours(0,0,0,0);
+const dateISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const parseDate=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+function schoolDaysBack(date,count){let d=new Date(date),arr=[];while(arr.length<count){d.setDate(d.getDate()-1);if(d.getDay()!==0&&d.getDay()!==6)arr.push(dateISO(d));}return arr;}
+let state;
+function initialState(){
+ const d=dateISO(today), hist={};
+ // Two fictional demo students have been absent on the previous two school days.
+ const prior=schoolDaysBack(today,2);
+ [1,12].forEach(id=>prior.forEach(day=>{hist[day]??={};hist[day][id]="A";}));
+ const current={};students.forEach(s=>current[s.id]="P");current[1]="A";current[12]="A";
+ hist[d]=current;
+ return {history:hist,pending:[{date:d,className:"Class 6A"}],lastSync:null};
+}
+try{state=JSON.parse(localStorage.getItem(KEY))||initialState()}catch(e){state=initialState()}
+function saveLocal(){localStorage.setItem(KEY,JSON.stringify(state));}
+const dateSelect=document.getElementById("dateSelect");dateSelect.value=dateISO(today);
+let currentDate=dateISO(today), currentClass="Class 6A";
+function dayRecord(){state.history[currentDate]??={};return state.history[currentDate]}
+function statusOf(id){return dayRecord()[id]||""}
+function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.remove("hidden");setTimeout(()=>t.classList.add("hidden"),2200)}
+function counts(){const rec=dayRecord();let p=0,a=0,u=0;students.forEach(s=>{if(rec[s.id]==="P")p++;else if(rec[s.id]==="A")a++;else u++;});return {p,a,u};}
+function streakFor(id){
+ let dates=[currentDate,...schoolDaysBack(parseDate(currentDate),10)],streak=0;
+ for(const day of dates){const v=state.history[day]?.[id];if(v==="A")streak++;else if(v==="P")break;else break;}
+ return streak;
+}
+function alertStudents(){return students.filter(s=>streakFor(s.id)>=3)}
+function renderStudents(){
+ const q=document.getElementById("searchStudent").value.toLowerCase();
+ const list=document.getElementById("studentList");list.innerHTML="";
+ students.filter(s=>(s.name+" "+s.roll).toLowerCase().includes(q)).forEach(s=>{
+  const v=statusOf(s.id),el=document.createElement("div");el.className="student";
+  el.innerHTML=`<div class="avatar">${s.name.split(" ").map(x=>x[0]).slice(0,2).join("")}</div><div><div class="name">${s.name}</div><div class="roll">Roll no. ${s.roll}</div></div><div class="status"><button class="${v==="P"?"selected present":""}" data-id="${s.id}" data-v="P" aria-label="Mark ${s.name} present">P</button><button class="${v==="A"?"selected absent":""}" data-id="${s.id}" data-v="A" aria-label="Mark ${s.name} absent">A</button></div>`;
+  list.appendChild(el);
+ });
+ list.querySelectorAll("button[data-id]").forEach(b=>b.addEventListener("click",()=>{dayRecord()[b.dataset.id]=b.dataset.v;state.pending=[{date:currentDate,className:currentClass}];saveLocal();render();}));
+}
+function alertHTML(){
+ const a=alertStudents();if(!a.length)return '<div class="notice">No three-day absence alerts right now.</div>';
+ return a.map(s=>`<div class="alert"><strong>${s.name} · ${streakFor(s.id)} consecutive school days</strong><span>Follow up with the family and record the outcome.</span></div>`).join("");
+}
+function render(){
+ const c=counts();document.getElementById("presentMetric").textContent=c.p;document.getElementById("absentMetric").textContent=c.a;document.getElementById("unmarkedMetric").textContent=c.u;
+ document.getElementById("syncMetric").textContent=state.pending.length?state.pending.length:"0";
+ document.getElementById("teacherAlerts").innerHTML=alertHTML();renderStudents();
+ document.getElementById("officeTotal").textContent=students.length;document.getElementById("officePresent").textContent=c.p;document.getElementById("officeAbsent").textContent=c.a;document.getElementById("officeRate").textContent=Math.round(c.p/students.length*100)+"%";
+ const tbody=document.getElementById("absentTable");tbody.innerHTML="";
+ students.filter(s=>statusOf(s.id)==="A").forEach(s=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${s.roll}</td><td>${s.name}</td><td><span style="color:#b43b43;font-weight:700">Absent</span></td>`;tbody.appendChild(tr);});
+ if(!tbody.children.length)tbody.innerHTML='<tr><td colspan="3" class="muted">No absentees recorded.</td></tr>';
+ document.getElementById("officeAlerts").innerHTML=alertHTML();
+ document.getElementById("todayLabel").textContent=parseDate(currentDate).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+ document.getElementById("pageTitle").textContent=currentClass+" attendance";
+ document.getElementById("saveState").textContent=state.pending.length?"Saved · waiting to sync":"All changes synced";
+}
+function setTab(which){const t=which==="teacher";document.getElementById("teacherView").classList.toggle("hidden",!t);document.getElementById("officeView").classList.toggle("hidden",t);document.getElementById("teacherTab").classList.toggle("active",t);document.getElementById("officeTab").classList.toggle("active",!t);}
+document.getElementById("teacherTab").onclick=()=>setTab("teacher");
+document.getElementById("officeTab").onclick=()=>setTab("office");
+document.getElementById("searchStudent").addEventListener("input",renderStudents);
+document.getElementById("classSelect").onchange=e=>{currentClass=e.target.value;render();};
+dateSelect.onchange=e=>{currentDate=e.target.value;render();};
+document.getElementById("allPresent").onclick=()=>{students.forEach(s=>dayRecord()[s.id]="P");state.pending=[{date:currentDate,className:currentClass}];saveLocal();render();showToast("All students marked present. Review before saving.");};
+document.getElementById("saveBtn").onclick=()=>{saveLocal();state.pending=[{date:currentDate,className:currentClass}];saveLocal();render();showToast("Attendance saved securely on this phone.");};
+document.getElementById("syncBtn").onclick=()=>{if(!navigator.onLine){showToast("You're offline. Attendance remains saved on this phone.");return;}state.pending=[];state.lastSync=new Date().toISOString();saveLocal();render();showToast("Demo sync complete. Server connection is simulated.");};
+document.getElementById("demoAlert").onclick=()=>{const s=students[4],days=[...schoolDaysBack(today,2),dateISO(today)];days.forEach(d=>{state.history[d]??={};state.history[d][s.id]="A";});state.pending=[{date:dateISO(today),className:currentClass}];saveLocal();render();showToast(s.name+" now demonstrates a 3-day absence alert.");};
+document.getElementById("exportBtn").onclick=()=>{const rows=[["Roll","Student","Date","Status"],...students.filter(s=>statusOf(s.id)==="A").map(s=>[s.roll,s.name,currentDate,"Absent"])];const csv=rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(",")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="attend2go-absentees-"+currentDate+".csv";a.click();URL.revokeObjectURL(a.href);};
+function net(){const el=document.getElementById("netStatus");el.textContent=navigator.onLine?"● Online":"● Offline · saved on phone";el.style.color=navigator.onLine?"#d7ffe9":"#ffe5a8";}
+window.addEventListener("online",net);window.addEventListener("offline",net);
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
+net();render();
+</script>
+</body>
+</html>
