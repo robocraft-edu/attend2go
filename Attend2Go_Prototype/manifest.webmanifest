@@ -1,0 +1,10 @@
+{
+  "name": "Attend2Go School Attendance",
+  "short_name": "Attend2Go",
+  "description": "Offline-first school attendance prototype",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f7fa",
+  "theme_color": "#12304a",
+  "icons": []
+}
